@@ -35,9 +35,11 @@ def create_todo():
     body = {}
     try:
         description = request.get_json()['description']
-        todo = Todo(description=description, completed=False)
+        list_id = request.get_json()['list-id']
+        todo = Todo(description=description, completed=False, list_id=list_id)
         db.session.add(todo)
         db.session.commit()
+        body['id'] = todo.id
         body['description'] = todo.description
         body['completed'] = todo.completed
     except:
@@ -85,4 +87,5 @@ def get_list_todos(list_id):
 
 @app.route('/')
 def index():
-    return redirect(url_for('get_list_todos', lists=1))
+    list_id = TodoList.query.first().id
+    return get_list_todos(list_id)

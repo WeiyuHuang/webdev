@@ -107,6 +107,7 @@
                 method: 'POST',
                 body: JSON.stringify({
                     'description': desc,
+                    'list-id': {{ active_list.id }}
                 }),
                 headers: {
                     'Content-Type': 'application/json',
