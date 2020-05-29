@@ -10,6 +10,11 @@
                 list-style: none;
                 padding: 0;
                 margin: 0;
+            }
+            #lists{
+                width: 150px;
+            }
+            #todos{
                 width: 200px;
             }
             li button {
@@ -19,7 +24,12 @@
                 color: red;
                 float: right;
                 cursor: pointer;
+            }
+            .delete-button {
                 font-size: 15px;
+            }
+            .delete-list-button {
+                font-size: 10px;
             }
             .lists-wrapper, .todos-wrapper {
                 display: inline-block;
@@ -39,6 +49,7 @@
                     <a href="/lists/{{ list.id }}">
                         {{ list.name }}
                     </a>
+                     <button class='delete-list-button' data-id="{{ list.id }}">&cross;</button>
                 </li>
                 {% endfor %}
             </ul>
@@ -56,7 +67,8 @@
                 {% for todo in todos %}
                 <li>
                     <input class="check-completed" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked {% endif %} />
-                    {{ todo.description }} <button class='delete-button' data-id="{{ todo.id }}">&cross;</button>
+                    {{ todo.description }}
+                    <button class='delete-button' data-id="{{ todo.id }}">&cross;</button>
                 </li>
                 {% endfor %}
             </ul>
@@ -80,22 +92,17 @@
             .then(response => response.json())
             .then(jsonResponse => {
                 const li = document.createElement('li');
-                // const checkbox = document.createElement('input');
-                // checkbox.className = 'check-completed';
-                // checkbox.type = 'checkbox';
-                // checkbox.setAttribute('data-id', jsonResponse.id);
-                // li.appendChild(checkbox);
 
                 var a = document.createElement("a");
                 a.setAttribute('href', "/lists/" + jsonResponse['list-id']);
                 a.textContent = jsonResponse['list-name'];
                 li.appendChild(a);
 
-                // const deleteBtn = document.createElement('button');
-                // deleteBtn.className = 'delete-button';
-                // deleteBtn.setAttribute('data-id', jsonResponse.id);
-                // deleteBtn.innerHTML = '&cross;';
-                // li.appendChild(deleteBtn);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-list-button';
+                deleteBtn.setAttribute('list-id', jsonResponse['list-id']);
+                deleteBtn.innerHTML = '&cross;';
+                li.appendChild(deleteBtn);
 
                 document.getElementById('lists').appendChild(li);
                 document.getElementById('error').className = 'hidden';
@@ -104,6 +111,23 @@
                 console.error('Error occurred', e.message);
                 document.getElementById('error').className = '';
             })
+        }
+
+        // Delete List
+        const delete_list_buttons = document.querySelectorAll('.delete-list-button');
+        for (let i = 0; i < delete_list_buttons.length; i++) {
+            const delete_botton = delete_list_buttons[i];
+            delete_botton.onclick = function(e) {
+                console.log('event', e);
+                const listId = e.target.dataset['id'];
+                fetch('/lists/' + listId, {
+                    method: 'DELETE'
+                })
+                .then(function() {
+                    const item = e.target.parentElement;
+                    item.remove()
+                })
+            }
         }
 
         // Delete Todo

@@ -9,6 +9,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+order_item = db.Table
+
 
 class Todo(db.Model):
     __tablename__ = 'todos'
@@ -24,7 +26,7 @@ class TodoList(db.Model):
     __tablename__ = 'todolists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    todos = db.relationship(Todo, backref='list', lazy=True)
+    todos = db.relationship(Todo, backref='list', lazy=True, cascade="delete")
 
     def __repr__(self):
         return f'<TodoList {self.id} {self.name}>'
@@ -51,6 +53,20 @@ def create_list():
         abort(400)
     else:
         return jsonify(body)
+
+# delete list
+@app.route('/lists/<list_id>', methods=['DELETE'])
+def set_deleted_list(list_id):
+    print('delete list', list_id)
+    try:
+        Todo.query.filter_by(list_id=list_id).delete()
+        TodoList.query.filter_by(id=list_id).delete()
+        db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        db.session.close()
+    return redirect(url_for('index'))
 
 # create to do
 @app.route('/todos/create', methods=['POST'])
