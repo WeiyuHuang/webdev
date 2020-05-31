@@ -28,10 +28,14 @@ def create_app(test_config=None):
 	@app.route('/books')
 	def get_books():
 		books = Book.query.order_by(Book.id).all()
+		current_books = paginate_books(request, books)
+
+		if len(current_books) == 0:
+			abort(404)
 
 		return jsonify({
 			'success': True,
-			'books': paginate_books(request, books),
+			'books': current_books,
 			'total_books': len(books)
 		})
 
@@ -93,19 +97,29 @@ def create_app(test_config=None):
 		title = body.get('title', None)
 		author = body.get('author', None)
 		rating = body.get('rating', None)
+		search = body.get('search', None)
 
 		try:
-			book = Book(title=title, author=author, rating=rating)
-			book.insert()
+			if search:
+				books = Book.query.order_by(Book.id).filter(Book.title.ilike('%{}%'.format(search))).all()
+				return jsonify({
+					'success': True,
+					'books': paginate_books(request, books),
+					'total_books': len(books)
+				})
 
-			books = Book.query.order_by(Book.id).all()
+			else:
+				book = Book(title=title, author=author, rating=rating)
+				book.insert()
 
-			return jsonify({
-				'success': True,
-				'books': paginate_books(request, books),
-				'created': book.id,
-				'total_books': len(books)
-			})
+				books = Book.query.order_by(Book.id).all()
+
+				return jsonify({
+					'success': True,
+					'books': paginate_books(request, books),
+					'created': book.id,
+					'total_books': len(books)
+				})
 		except:
 			abort(422)
 
