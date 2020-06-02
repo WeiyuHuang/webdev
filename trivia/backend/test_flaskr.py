@@ -100,7 +100,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
 
     def test_create_question_error_empty_inputs(self):
-
         dummy_question_data = {
             "question": "",
             "answer": "",
@@ -115,6 +114,42 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'Unprocessable')
 
+    def test_search_questions(self):
+        request_data = {
+            "searchTerm": "human body"
+        }
+
+        response = self.client().post('/questions/search', json=request_data)
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(len(data['questions']), 1)
+        self.assertTrue(data['questions'][0]['id'], 20)   # Q20: What is the heaviest organ in the human body?
+
+    def test_search_questions_empty_search_term(self):
+        request_data = {
+            "searchTerm": ""
+        }
+
+        response = self.client().post('/questions/search', json=request_data)
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_search_questions_not_found(self):
+        request_data = {
+            "searchTerm": "lkadjglkasndrlkuelransmelr"
+        }
+
+        response = self.client().post('/questions/search', json=request_data)
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "Resource not found")
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
