@@ -70,46 +70,62 @@ def create_app(test_config=None):
 
         Return all questions, listed as paginated, or status 404
         """
+        questions = Question.query.order_by(Question.id).all()
+        categories = Category.query.order_by(Category.id).all()
+        current_questions = get_paginated_questions(request, questions)
+
+        if len(current_questions) == 0:
+            abort(404)
+
+        categories_dict = {}
+        for category in categories:
+            categories_dict[category.id] = category.type
+
+        return jsonify({
+            'success': True,
+            'total_questions': len(questions),
+            'categories': categories_dict,
+            'questions': current_questions
+        }), 200
+
+
+    @app.route('/questions/<int:question_id>', methods=['DELETE'])
+    def delete_question(question_id):
         try:
-            questions = Question.query.order_by(Question.id).all()
-            categories = Category.query.order_by(Category.id).all()
-            current_questions = get_paginated_questions(request, questions)
-
-            if len(current_questions) == 0:
-                abort(404)
-
-            categories_dict = {}
-            for category in categories:
-                categories_dict[category.id] = category.type
+            question = Question.query.get(question_id)
+            question.delete()
 
             return jsonify({
                 'success': True,
-                'total_questions': len(questions),
-                'categories': categories_dict,
-                'questions': current_questions
+                'question_deleted': question.id
             }), 200
         except:
             abort(422)
 
+    @app.route('/questions', methods=['POST'])
+    def create_question():
+        data = request.get_json()
 
-    '''
-    @TODO: 
-    Create an endpoint to DELETE question using a question ID. 
-  
-    TEST: When you click the trash icon next to a question, the question will be removed.
-    This removal will persist in the database and when you refresh the page. 
-    '''
+        question = data.get('question', '')
+        answer = data.get('answer', '')
+        difficulty = data.get('difficulty', '')
+        category = data.get('category', '')
 
-    '''
-    @TODO: 
-    Create an endpoint to POST a new question, 
-    which will require the question and answer text, 
-    category, and difficulty score.
-  
-    TEST: When you submit a question on the "Add" tab, 
-    the form will clear and the question will appear at the end of the last page
-    of the questions list in the "List" tab.  
-    '''
+        # ensure data is not empty
+        if question == '' or answer == '' or difficulty == '' or category == '':
+            abort(422)
+
+        try:
+            question = Question(question=question, answer=answer,
+                                difficulty=difficulty, category=category)
+            question.insert()
+
+            return jsonify({
+                'success': True,
+                'question_created': question.id
+            }), 201
+        except:
+            abort(422)
 
     '''
     @TODO: 
@@ -144,10 +160,36 @@ def create_app(test_config=None):
     and shown whether they were correct or not. 
     '''
 
-    '''
-    @TODO: 
-    Create error handlers for all expected errors 
-    including 404 and 422. 
-    '''
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'success': False,
+            'error': 400,
+            'message': 'Bad request'
+        }), 400
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            'success': False,
+            'error': 404,
+            'message': 'Resource not found'
+        }), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        return jsonify({
+            'success': False,
+            'error': 500,
+            'message': 'An error occured. Please try again later'
+        }), 500
+
+    @app.errorhandler(422)
+    def unprocesable(error):
+        return jsonify({
+            'success': False,
+            'error': 422,
+            'message': 'Unprocessable'
+        }), 422
 
     return app
