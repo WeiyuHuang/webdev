@@ -148,7 +148,7 @@ def create_app(test_config=None):
                 'success': True,
                 'questions': get_paginated_questions(request, questions),
                 'total_questions': len(questions),
-                'current_category': None
+                'current_category': [question.category for question in questions]
             }), 200
         except:
             abort(404)
