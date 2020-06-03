@@ -16,6 +16,9 @@ def get_paginated_questions(request, questions):
     formatted_questions = [question.format() for question in questions]
     return formatted_questions[start:end]
 
+def get_random_question(questions):
+    return questions[random.randint(0, len(questions) - 1)]
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -138,38 +141,58 @@ def create_app(test_config=None):
         try:
             questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
 
-            if len(questions) == 0:
-                abort(404)
-
             return jsonify({
                 'success': True,
                 'questions': get_paginated_questions(request, questions),
-                'total_questions': len(questions)
+                'total_questions': len(questions),
+                'current_category': None
             }), 200
         except:
             abort(404)
 
-    '''
-    @TODO: 
-    Create a GET endpoint to get questions based on category. 
-  
-    TEST: In the "List" tab / main screen, clicking on one of the 
-    categories in the left column will cause only questions of that 
-    category to be shown. 
-    '''
+    @app.route('/categories/<int:category_id>/questions')
+    def get_questions_by_category(category_id):
 
+        category = Category.query.filter_by(id=category_id).one_or_none()
+        if category is None:
+            abort(422)
 
-    '''
-    @TODO: 
-    Create a POST endpoint to get questions to play the quiz. 
-    This endpoint should take category and previous question parameters 
-    and return a random questions within the given category, 
-    if provided, and that is not one of the previous questions. 
-  
-    TEST: In the "Play" tab, after a user selects "All" or a category,
-    one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not. 
-    '''
+        questions = Question.query.filter_by(category=category_id).all()
+
+        return jsonify({
+            'success': True,
+            'questions': get_paginated_questions(request, questions),
+            'total_questions': len(questions),
+            'current_category': category.type
+        }), 200
+
+    @app.route('/quizzes', methods=['POST'])
+    def play_quiz_question():
+        data = request.get_json()
+        previous_questions = data.get('previous_questions')
+        quiz_category = data.get('quiz_category')
+
+        if (previous_questions is None) or (quiz_category is None):
+            abort(400)
+
+        if quiz_category['id'] == 0:
+            questions = Question.query.all()
+        else:
+            questions = Question.query.filter_by(category=quiz_category['id']).all()
+
+        next_question = get_random_question(questions)
+        while next_question.id in previous_questions:
+            next_question = get_random_question(questions)
+
+            if (len(previous_questions) == len(questions)):
+                return jsonify({
+                    'success': True
+                })
+
+        return jsonify({
+            'success': True,
+            'question': next_question.format()
+        }), 200
 
     @app.errorhandler(400)
     def bad_request(error):
