@@ -8,6 +8,7 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+
 def get_paginated_questions(request, questions):
     page = request.args.get('page', 1, type=int)
     start = (page - 1) * QUESTIONS_PER_PAGE
@@ -16,8 +17,10 @@ def get_paginated_questions(request, questions):
     formatted_questions = [question.format() for question in questions]
     return formatted_questions[start:end]
 
+
 def get_random_question(questions):
     return questions[random.randint(0, len(questions) - 1)]
+
 
 def create_app(test_config=None):
     # create and configure the app
@@ -65,7 +68,6 @@ def create_app(test_config=None):
         except:
             abort(500)
 
-
     @app.route('/questions')
     def get_questions():
         """
@@ -91,7 +93,6 @@ def create_app(test_config=None):
             'questions': current_questions
         }), 200
 
-
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
         try:
@@ -115,7 +116,8 @@ def create_app(test_config=None):
         category = data.get('category', '')
 
         # ensure data is not empty
-        if question == '' or answer == '' or difficulty == '' or category == '':
+        if (question == '' or answer == '' or
+                difficulty == '' or category == ''):
             abort(422)
 
         try:
@@ -139,7 +141,8 @@ def create_app(test_config=None):
             abort(422)
 
         try:
-            questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+            questions = Question.query.filter(Question.question.
+                                              ilike(f'%{search_term}%')).all()
 
             return jsonify({
                 'success': True,
@@ -178,7 +181,8 @@ def create_app(test_config=None):
         if quiz_category['id'] == 0:
             questions = Question.query.all()
         else:
-            questions = Question.query.filter_by(category=quiz_category['id']).all()
+            questions = Question.query.filter_by(
+                category=quiz_category['id']).all()
 
         next_question = get_random_question(questions)
         while next_question.id in previous_questions:
