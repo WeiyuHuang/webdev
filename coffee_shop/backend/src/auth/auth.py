@@ -4,17 +4,18 @@ from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
-
 AUTH0_DOMAIN = 'glistter.auth0.com'
 ALGORITHMS = ['RS256']
 API_AUDIENCE = 'coffee'
 
+
 ## AuthError Exception
-'''
-AuthError Exception
-A standardized way to communicate auth failure modes
-'''
 class AuthError(Exception):
+    """
+    AuthError Exception
+    A standardized way to communicate auth failure modes
+    """
+
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
@@ -29,23 +30,17 @@ def get_token_auth_header():
             'description': 'Authorization header is expected.'
         }, 401)
 
-    parts = auth.split()
+    parts = auth.split(' ')
     if parts[0].lower() != 'bearer':
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Authorization header must start with "Bearer".'
         }, 401)
 
-    elif len(parts) == 1:
+    elif len(parts) != 2:
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Token not found.'
-        }, 401)
-
-    elif len(parts) > 2:
-        raise AuthError({
-            'code': 'invalid_header',
-            'description': 'Authorization header must be bearer token.'
         }, 401)
 
     token = parts[1]
@@ -63,7 +58,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found.'
-        }, 403)
+        }, 401)
     return True
 
 
@@ -130,4 +125,5 @@ def requires_auth(permission=''):
             return f(payload, *args, **kwargs)
 
         return wrapper
+
     return requires_auth_decorator
