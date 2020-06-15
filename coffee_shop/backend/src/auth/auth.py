@@ -9,7 +9,7 @@ ALGORITHMS = ['RS256']
 API_AUDIENCE = 'coffee'
 
 
-## AuthError Exception
+# AuthError Exception
 class AuthError(Exception):
     """
     AuthError Exception
@@ -21,7 +21,7 @@ class AuthError(Exception):
         self.status_code = status_code
 
 
-## Auth Header
+# Auth Header
 def get_token_auth_header():
     auth = request.headers.get('Authorization', None)
     if not auth:
@@ -102,7 +102,7 @@ def verify_decode_jwt(token):
         except jwt.JWTClaimsError:
             raise AuthError({
                 'code': 'invalid_claims',
-                'description': 'Incorrect claims. Please, check the audience and issuer.'
+                'description': 'Incorrect claims. Check the audience and issuer.'
             }, 401)
         except Exception:
             raise AuthError({
