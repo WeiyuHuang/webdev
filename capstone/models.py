@@ -3,9 +3,10 @@ from sqlalchemy import Column, String, Integer, Date, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
 
-db_path = os.environ.get('DATABASE_URL')
+# db_path = "postgres://postgres:Udacity123@movietests.cinxaxywkixl.us-west-2.rds.amazonaws.com:5432/movietests"
+db_path = None
 if not db_path:
-    db_name = "trivia"
+    db_name = "movies_test"
     db_path = "postgres://{}/{}".format("localhost:5432", db_name)
 
 db = SQLAlchemy()
