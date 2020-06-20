@@ -3,6 +3,7 @@ from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
+from auth import AuthError, requires_auth
 from models import setup_db, Actor, Movie
 
 db = SQLAlchemy()
@@ -16,13 +17,36 @@ def create_app(test_config=None):
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+    @app.after_request
+    def after_request(response):
+        response.headers.add(
+            "Access-Control-Allow-Headers", "Content-Type,Authorization"
+        )
+
+        response.headers.add(
+            "Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS"
+        )
+        return response
+
     @app.route('/')
     def home_run():
-        return f"running in home"
+        AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
+        AUTH0_CALLBACK_URL = os.getenv("CALLBACK_URL")
+        API_AUDIENCE = os.getenv("API_AUDIENCE")
+        CLIENT_ID = os.getenv("CLIENT_ID")
+        url = (
+            f"https://{AUTH0_DOMAIN}/authorize"
+            f"?audience={API_AUDIENCE}"
+            f"&response_type=token&client_id="
+            f"{CLIENT_ID}&redirect_uri="
+            f"{AUTH0_CALLBACK_URL}"
+        )
+
+        return f"If the JWT tokens expired, please request new JWT tokens at this URL: {url}"
 
     @app.route('/movies', methods=['GET'])
-    #@requires_auth('get:movie')
-    def get_movies():
+    @requires_auth('get:movies')
+    def get_movies(jwt):
         movies = Movie.query.all()
         if (len(movies) == 0):
             abort(404)
@@ -44,8 +68,8 @@ def create_app(test_config=None):
             abort(422)
 
     @app.route('/actors', methods=['GET'])
-    # @requires_auth('get:actor')
-    def get_actors():
+    @requires_auth('get:actors')
+    def get_actors(jwt):
         actors = Actor.query.all()
         if (len(actors) == 0):
             abort(404)
@@ -68,8 +92,8 @@ def create_app(test_config=None):
             abort(422)
 
     @app.route('/movies', methods=['POST'])
-    # @requires_auth('post:movie')
-    def add_movie():
+    @requires_auth('post:movies')
+    def add_movie(jwt):
 
         if not request.method == 'POST':
             abort(405)
@@ -97,8 +121,8 @@ def create_app(test_config=None):
             db.session.close()
 
     @app.route('/movies/<int:delete_id>', methods=['DELETE'])
-    #@requires_auth('delete:movie')
-    def delete_movie(delete_id):
+    @requires_auth('delete:movies')
+    def delete_movie(jwt, delete_id):
 
         to_delete = Movie.query.get(delete_id)
         if to_delete is None:
@@ -118,8 +142,8 @@ def create_app(test_config=None):
             db.session.close()
 
     @app.route('/movies/<int:patch_id>', methods=['PATCH'])
-    #@requires_auth('patch:movie')
-    def patch_movie(patch_id):
+    @requires_auth('patch:movies')
+    def patch_movie(jwt, patch_id):
         to_patch = Movie.query.filter(Movie.id == patch_id).one_or_none()
         if to_patch is None:
             abort(404)
@@ -164,13 +188,13 @@ def create_app(test_config=None):
             "message": "unprocessable"
         }), 422
 
-    # @app.errorhandler(AuthError)
-    # def auth_error(exception):
-    #     return jsonify({
-    #         "success": False,
-    #         "error": exception.status_code,
-    #         "message": exception.error['code']
-    #     }), exception.status_code
+    @app.errorhandler(AuthError)
+    def auth_error(exception):
+        return jsonify({
+            "success": False,
+            "error": exception.status_code,
+            "message": exception.error['code']
+        }), exception.status_code
 
     return app
 
