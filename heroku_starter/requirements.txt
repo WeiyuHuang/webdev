@@ -59,7 +59,7 @@ psycopg2-pool==1.1
 ptyprocess==0.6.0
 pyasn1==0.4.8
 pycryptodome==3.3.1
-Pygments==2.6.1
+Pygments==2.7.4
 pylint==2.3.1
 pyparsing==2.4.7
 pyrsistent==0.16.0
